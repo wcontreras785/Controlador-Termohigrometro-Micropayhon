@@ -1,9 +1,10 @@
 from machine import SoftI2C, Pin, RTC
 import onewire, ds18x20, time
-import utime, dht, network
-import OLED, ntptime, fdht
+import utime, dht, network, urequests
+import OLED, ntptime
 
-temp=34
+temp=30
+url = "https://api.thingspeak.com/update?api_key=CTVG0E49RI7RSV78" 
 #------------------------------------------WIFI-------------------
 def conectaWifi (red, password):
       global miRed
@@ -36,8 +37,7 @@ def rhora():
     print ("Hora: {:02d}:{:02d}:{:02d}".format(rtc.datetime()[4],
                                            rtc.datetime()[5],
                                            rtc.datetime()[6]))
-rfecha()
-rhora()
+
 rtcdate=rfecha()
 #---------------------------------Oled------
 i2c = SoftI2C(scl=Pin(4), sda=Pin(16)) # pines I2C
@@ -70,10 +70,11 @@ def calor():
         moc1.value(0)
         
     else:
-        utime.sleep(1)
+        utime.sleep_ms(500)
         moc1.value(1)
         print("Ajustando Temperatura")
-        
+        rfecha()
+        rhora()
 def motor():
     utime.sleep(2)
     moc2.value(1)
@@ -100,8 +101,13 @@ while True:
     oled.text("tem:"+ str(round(temp,2)) +" C",5,0)
     oled.show()
     motor()
-    calor()  
-
+    calor()
+    time.sleep(4)
+    respuesta = urequests.get(url+"&field1="+str(temp)+"&field2="+str(t)+"&field3="+str(t2)+"&field4="+str(h))
+    print(respuesta.text)
+    print (respuesta.status_code)
+    respuesta.close ()
+        
 if __name__==("__main__"):
     main()
 
